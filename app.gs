@@ -1,5 +1,6 @@
 var env = PropertiesService.getScriptProperties().getProperties();
 var counter;
+var dif;
 
 function getService() {
 
@@ -27,7 +28,7 @@ function tweetPicFromURL(target_file) {
     var boundary = "cuthere";
 
     // set the tweet status
-    var status = 'desired status';
+    var status = 'Blade Runner 2049';
 
     var requestBody = Utilities.newBlob("--" + boundary + "\r\n" +
       "Content-Disposition: form-data; name=\"status\"\r\n\r\n" + status + "\r\n" +
@@ -60,28 +61,18 @@ function tweetPicFromURL(target_file) {
   }
 }
 
-function Oauth1percentEncode(text) {
+function uploadTwitterMedia(file) {
 
-  text = encodeURIComponent(text).replace(/\!/g, "%21")
-    .replace(/\*/g, "%2A")
-    .replace(/\'/g, "%27")
-    .replace(/\(/g, "%28");
-
-  return text
-}
-
-function uploadTwitterMedia(image) {
-
-  var file = DriveApp.getFilesByName(image);
+  var file = DriveApp.getFilesByName(file);
 
   while (file.hasNext()) {
-    var pic = file.next();
+    var target = file.next();
   }
 
   var service = getService();
-  var initResponse = initTwitterUpload(pic, service, pic);
+  var initResponse = initTwitterUpload(target, service, target);
 
-  appendTwitterUpload(pic, initResponse, service);
+  appendTwitterUpload(target, initResponse, service);
   Utilities.sleep(10000);
 
   finalizeTwitterUpload(initResponse, service);
@@ -91,7 +82,7 @@ function uploadTwitterMedia(image) {
 
   var baseUrl = "https://api.twitter.com/1.1/statuses/update.json?"
   // set desired status
-  var params = "status=desired status&media_ids=" + initResponse["media_id_string"]
+  var params = "status=Blade Runner 2049&media_ids=" + initResponse["media_id_string"]
   var tweetUrl = baseUrl + params
 
   var response = getService().fetch(tweetUrl, {
@@ -104,9 +95,9 @@ function uploadTwitterMedia(image) {
   return initResponse["media_id_string"]
 }
 
-function initTwitterUpload(url, service, image) {
+function initTwitterUpload(url, service, file) {
 
-  var test = DriveApp.getFilesByName(image)
+  var test = DriveApp.getFilesByName(file)
 
   while (test.hasNext()) {
     var file = test.next();
@@ -127,6 +118,7 @@ function initTwitterUpload(url, service, image) {
     .replace(/\)/g, "%29") + "&media_category=" + Oauth1percentEncode("tweetvideo");
 
   var tweetUrl = baseUrl + oauthParams
+  Logger.log(tweetUrl)
   var response = service.fetch(tweetUrl, { method: 'POST' })
 
   Logger.log(JSON.parse(response.getContentText()))
@@ -179,7 +171,18 @@ function finalizeTwitterUpload(init, service) {
   return JSON.parse(response.getContentText())
 }
 
-function getFileName(basename) {
+
+function Oauth1percentEncode(text) {
+
+  text = encodeURIComponent(text).replace(/\!/g, "%21")
+    .replace(/\*/g, "%2A")
+    .replace(/\'/g, "%27")
+    .replace(/\(/g, "%28");
+
+  return text
+}
+
+function getFileBlob(basename) {
 
   /* 
     handle the file type and get the proper file name
@@ -222,22 +225,20 @@ function getFileName(basename) {
   return target_file;
 }
 
-function tweetFile(arg_file) {
+function tweetFile() {
 
   var target_file;
   var final_file;
 
-  if (arg_file == undefined) {
+  // set counter text file and the containing folder
+  var fileName = "counter.txt";
+  var folderName = "frames";
 
-    // set counter text file and the containing folder
-    var fileName = "counter.txt";
-    var folderName = "folder";
+  var basename;
+  var content;
 
-    var basename;
-    var content;
-
-    // get list of folders with matching name
-    var folderList = DriveApp.getFoldersByName(folderName);
+  // get list of folders with matching name
+  var folderList = DriveApp.getFoldersByName(folderName);
 
     if (folderList.hasNext()) {
       
@@ -252,7 +253,7 @@ function tweetFile(arg_file) {
         // found matching file - append text
         var file = fileList.next();
         // set number of total files
-        var total_files = 1000;
+        var total_files = 2015;
         var number;
 
         // find a file that has not been tweeted out yet
@@ -261,7 +262,7 @@ function tweetFile(arg_file) {
           // get a random file number within the limit
           number = Math.floor(Math.random() * total_files);
           // match the file name
-          basename = number + "title" + number;
+          basename = number + "bladerunner" + number;
           // prepare to input in the counter text file        
           content = 'galf' + basename + 'flag' + "\n";
 
@@ -269,16 +270,11 @@ function tweetFile(arg_file) {
       }
     }
 
-    Logger.log(basename);
+  Logger.log(basename);
 
-    target_file = getFileName(basename);
-    final_file = target_file.getName();
-  }
+  target_file = getFileBlob(basename);
+  final_file = target_file.getName();
 
-  else {
-    final_file = arg_file;
-  }
-  
   var format = final_file.substring(final_file.length - 3, final_file.length);
 
   Logger.log(format)
@@ -289,7 +285,6 @@ function tweetFile(arg_file) {
   }
 
   else {
-    
     var combinedContent = file.getBlob().getDataAsString() + content;
 
     file.setContent(combinedContent);
@@ -298,6 +293,27 @@ function tweetFile(arg_file) {
 }
 
 function tweetSpecificFile() {
+
   // set the file to be tweeted
-  tweetFile("filename.format")
+  var filename = "filename"
+  
+  var file = DriveApp.getFilesByName(filename);
+  var format = filename.substring(filename.length - 3, filename.length);
+
+  Logger.log(format)
+
+  // mp4 has to go through chunked media upload
+  if (format == 'mp4') {
+    Logger.log(filename.getName());
+    uploadTwitterMedia(filename);
+  }
+
+  else {
+
+  while (file.hasNext()) {
+    target_file = file.next().getBlob();
+    Logger.log(target_file.getName());
+  }
+    tweetPicFromURL(target_file);
+  }
 }
