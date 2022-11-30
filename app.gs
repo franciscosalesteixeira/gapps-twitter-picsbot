@@ -1,6 +1,4 @@
 var env = PropertiesService.getScriptProperties().getProperties();
-var counter;
-var dif;
 
 function getService() {
 
@@ -237,6 +235,12 @@ function tweetFile() {
   var basename;
   var content;
 
+  var reset = parseInt(PropertiesService.getScriptProperties().getProperty('RESET'));
+
+  reset += 1;
+
+  PropertiesService.getScriptProperties().setProperty('RESET', reset.toString());
+
   // get list of folders with matching name
   var folderList = DriveApp.getFoldersByName(folderName);
 
@@ -253,8 +257,13 @@ function tweetFile() {
         // found matching file - append text
         var file = fileList.next();
         // set number of total files
-        var total_files = 2015;
+        var total_files = PropertiesService.getScriptProperties().getProperty('TOTAL_FILES');
         var number;
+
+        if (reset == parseInt(PropertiesService.getScriptProperties().getProperty('TOTAL_FILES'))){
+          file.setContent("")
+          PropertiesService.getScriptProperties().setProperty('RESET', '0');
+        }
 
         // find a file that has not been tweeted out yet
         do {
